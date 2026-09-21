@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">BigFatFish</string>
+    <string name="accessibility_description">Displays an animated companion at your mouse pointer. Uses passive mouse observation after you start the ADB helper. Does not read screen content, capture keyboard input, or inject clicks.</string>
+    <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#087F8C</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#E9F6F6</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

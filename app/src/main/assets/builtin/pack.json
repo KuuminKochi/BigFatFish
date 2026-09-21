@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "name": "BigFatFish",
+  "author": "xian_kuang",
+  "license": "Creator-owned artwork by xian_kuang; this repository does not grant a new artwork license.",
+  "attachment": [
+    0.5,
+    0.14
+  ],
+  "states": {
+    "active": [
+      {
+        "file": "active/00.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/01.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/02.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/03.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/04.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/05.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/06.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/07.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/08.png",
+        "durationMs": 100
+      },
+      {
+        "file": "active/09.png",
+        "durationMs": 100
+      }
+    ],
+    "sleep": [
+      {
+        "file": "sleep/00.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/01.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/02.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/03.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/04.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/05.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/06.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/07.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/08.png",
+        "durationMs": 100
+      },
+      {
+        "file": "sleep/09.png",
+        "durationMs": 100
+      }
+    ],
+    "react": [
+      {
+        "file": "react/00.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/01.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/02.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/03.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/04.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/05.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/06.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/07.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/08.png",
+        "durationMs": 100
+      },
+      {
+        "file": "react/09.png",
+        "durationMs": 100
+      }
+    ]
+  },
+  "source": "https://gif.fxtwitter.com/tweet_video/HQLw2uAXQAAQFCf.webp",
+  "creatorPage": "https://ko-fi.com/s/fbfdb09d3b"
+}

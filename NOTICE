@@ -1,0 +1,17 @@
+BigFatFish
+Copyright 2026 BigFatFish contributors
+
+The Apache License 2.0 in LICENSE applies to the application source code and original code contributions.
+
+Character artwork: xian_kuang
+The character frames under app/src/main/assets/builtin/ and the character launcher image under app/src/main/res/drawable-nodpi/ are adapted from the user-supplied animated preview:
+https://gif.fxtwitter.com/tweet_video/HQLw2uAXQAAQFCf.webp
+Creator's page: https://ko-fi.com/s/fbfdb09d3b
+These artist-owned images are not covered by the application's Apache license. This repository does not claim ownership or grant a new artwork license.
+
+AndroidHiddenApiBypass 6.1
+Copyright 2021-2025 LSPosed
+Licensed under the Apache License, Version 2.0.
+https://github.com/LSPosed/AndroidHiddenApiBypass
+
+Android platform integration follows Android Open Source Project interfaces and examples.

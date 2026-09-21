@@ -1,0 +1,15 @@
+/.gradle/
+/.kotlin/
+/local.properties
+/**/build/
+/dist/
+/.idea/
+*.iml
+*.jks
+*.keystore
+*.apk
+*.idsig
+*.aab
+/private/
+/private-artwork/
+*.hprof
