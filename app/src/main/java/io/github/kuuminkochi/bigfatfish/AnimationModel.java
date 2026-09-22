@@ -35,6 +35,7 @@ public final class AnimationModel {
 
     private float strength = 1f;
     private float damping = 7f;
+    private float gravityStrength = 1f;
     private long idleDelayMs = DEFAULT_IDLE_DELAY_MS;
     private boolean sleepEnabled = true;
     private int reactionMask = -1;
@@ -123,6 +124,11 @@ public final class AnimationModel {
             angle = clamp(angle, -MAX_ANGLE, MAX_ANGLE);
             angularVelocity = clamp(angularVelocity, -4.5f, 4.5f);
         }
+    }
+
+    /** Changes gravity in realistic mode without resetting the current string motion. */
+    public void configureGravity(float multiplier) {
+        gravityStrength = clamp(finiteOr(multiplier, 1f), 0f, 3f);
     }
 
     /** Changes fading without resetting its current progress or sleep state. */
@@ -326,7 +332,7 @@ public final class AnimationModel {
 
     private void stepRope(float dt) {
         float drag = (float) Math.exp(-damping * dt);
-        float gravity = GRAVITY_DP_PER_SECOND_SQUARED;
+        float gravity = GRAVITY_DP_PER_SECOND_SQUARED * gravityStrength;
         for (int i = 1; threadLengthDp > PARTICLE_EPSILON && i < ROPE_POINTS; i++) {
             float x = ropeX[i];
             float y = ropeY[i];

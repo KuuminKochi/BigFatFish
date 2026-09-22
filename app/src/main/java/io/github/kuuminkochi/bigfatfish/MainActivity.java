@@ -154,6 +154,7 @@ public final class MainActivity extends Activity {
         addSwitch("Realistic physics", "A flexible string: slack, bending, gravity, and tension", config.realisticPhysics, value -> putBoolean(SettingsStore.KEY_REALISTIC_PHYSICS, value));
         addSlider("String movement strength", "Independent tuning for Realistic physics", 0f, 2f, config.stringStrength, value -> putFloat(SettingsStore.KEY_STRING_STRENGTH, value), "%.2f");
         addSlider("String damping", "How quickly realistic string motion settles", 2f, 16f, config.stringDamping, value -> putFloat(SettingsStore.KEY_STRING_DAMPING, value), "%.1f");
+        addSlider("Gravity strength", "Realistic physics only: 0x weightless, 1x normal", 0f, 3f, config.gravityStrength, value -> putFloat(SettingsStore.KEY_GRAVITY, value), "%.2fx");
         addReactionChooser();
 
         addHeading("Idle");

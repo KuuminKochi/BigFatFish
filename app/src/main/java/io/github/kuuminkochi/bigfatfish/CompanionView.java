@@ -268,6 +268,7 @@ public final class CompanionView extends View {
                 config.realisticPhysics ? config.stringDamping : config.damping, config.idleDelayMs,
                 config.sleepEnabled, config.reactionMask, reactionDurationMs);
         model.configurePhysics(config.realisticPhysics, threadLengthDp(), bodyOffsetDp());
+        model.configureGravity(config.gravityStrength);
         model.configureOpacity(config.fadeWhenIdle, config.activeOpacity, config.idleOpacity);
     }
 

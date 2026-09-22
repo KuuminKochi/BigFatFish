@@ -274,6 +274,7 @@ public final class CompanionService extends AccessibilityService {
                 && Float.compare(a.swingStrength, b.swingStrength) == 0
                 && Float.compare(a.stringStrength, b.stringStrength) == 0
                 && Float.compare(a.stringDamping, b.stringDamping) == 0
+                && Float.compare(a.gravityStrength, b.gravityStrength) == 0
                 && Float.compare(a.damping, b.damping) == 0
                 && Float.compare(a.animationSpeed, b.animationSpeed) == 0
                 && a.idleDelayMs == b.idleDelayMs && a.sleepEnabled == b.sleepEnabled
