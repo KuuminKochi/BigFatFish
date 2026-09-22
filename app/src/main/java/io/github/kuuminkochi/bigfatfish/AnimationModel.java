@@ -48,6 +48,10 @@ public final class AnimationModel {
     private final float[] ropeY = new float[ROPE_POINTS];
     private final float[] previousRopeX = new float[ROPE_POINTS];
     private final float[] previousRopeY = new float[ROPE_POINTS];
+    private final float[] renderFromX = new float[ROPE_POINTS];
+    private final float[] renderFromY = new float[ROPE_POINTS];
+    private float renderFromBodyX;
+    private float renderFromBodyY;
     private float bodyX;
     private float bodyY;
     private float previousBodyX;
@@ -286,6 +290,37 @@ public final class AnimationModel {
         return ropePointY(ROPE_POINTS - 1);
     }
 
+    /** Interpolated render pose; simulation coordinates remain authoritative for constraints. */
+    public float renderRopePointX(int index) {
+        if (index <= 0) return 0f;
+        index = Math.min(index, ROPE_POINTS - 1);
+        return interpolate(renderFromX[index], ropeX[index]);
+    }
+
+    public float renderRopePointY(int index) {
+        if (index <= 0) return 0f;
+        index = Math.min(index, ROPE_POINTS - 1);
+        return interpolate(renderFromY[index], ropeY[index]);
+    }
+
+    public float renderAngleRadians() {
+        if (!realisticPhysics) return angle;
+        float dx = interpolate(renderFromBodyX, bodyX) - renderRopePointX(ROPE_POINTS - 1);
+        float dy = interpolate(renderFromBodyY, bodyY) - renderRopePointY(ROPE_POINTS - 1);
+        return dx * dx + dy * dy > PARTICLE_EPSILON ? (float) Math.atan2(-dx, dy) : angle;
+    }
+
+    private float interpolate(float from, float to) {
+        return from + (to - from) * (simulationRemainder / FIXED_STEP_SECONDS);
+    }
+
+    private void snapshotRenderPose() {
+        System.arraycopy(ropeX, 0, renderFromX, 0, ROPE_POINTS);
+        System.arraycopy(ropeY, 0, renderFromY, 0, ROPE_POINTS);
+        renderFromBodyX = bodyX;
+        renderFromBodyY = bodyY;
+    }
+
     private void resetRope() {
         float segment = threadLengthDp / ROPE_SEGMENTS;
         float curvature = Math.min(1.5f, threadLengthDp * 0.08f);
@@ -308,6 +343,7 @@ public final class AnimationModel {
         previousBodyX = bodyX;
         previousBodyY = bodyY;
         if (realisticPhysics) updateRealisticAngle();
+        snapshotRenderPose();
     }
 
     private void translatePivot(float dx, float dy) {
@@ -328,9 +364,12 @@ public final class AnimationModel {
         previousBodyY = finiteOr(previousBodyY - dy, 0f);
         enforceRopeReach();
         updateRealisticAngle();
+        // Do not interpolate from the old anchor after a cursor move or constraint correction.
+        snapshotRenderPose();
     }
 
     private void stepRope(float dt) {
+        snapshotRenderPose();
         float drag = (float) Math.exp(-damping * dt);
         float gravity = GRAVITY_DP_PER_SECOND_SQUARED * gravityStrength;
         for (int i = 1; threadLengthDp > PARTICLE_EPSILON && i < ROPE_POINTS; i++) {

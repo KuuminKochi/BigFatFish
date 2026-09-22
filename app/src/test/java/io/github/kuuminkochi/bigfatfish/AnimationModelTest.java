@@ -196,4 +196,35 @@ public final class AnimationModelTest {
         model.advance(10_033L);
         assertEquals(0f, model.opacity(), 0f);
     }
+
+    @Test
+    public void renderingInterpolatesBetweenFixedStepsWithoutChangingPhysics() {
+        AnimationModel model = new AnimationModel(0);
+        model.configurePhysics(true, 80f, 24f);
+        model.onPointer(0f, 60f, 0, true, 0);
+        model.advance(20);
+        int end = model.ropePointCount() - 1;
+        float simulationY = model.pendantY();
+        float firstRenderY = model.renderRopePointY(end);
+        model.advance(23);
+        assertEquals(simulationY, model.pendantY(), 0f);
+        assertTrue(model.renderRopePointY(end) > firstRenderY);
+        assertTrue(model.renderRopePointY(end) <= simulationY);
+    }
+
+    @Test
+    public void interpolationDoesNotTrailAnOldAnchorOrLength() {
+        AnimationModel model = new AnimationModel(0);
+        model.configurePhysics(true, 80f, 24f);
+        model.onPointer(20f, 30f, 0, true, 16);
+        model.advance(20);
+        model.onPointer(300f, -300f, 0, true, 23);
+        int end = model.ropePointCount() - 1;
+        assertEquals(model.pendantX(), model.renderRopePointX(end), 0f);
+        assertEquals(model.pendantY(), model.renderRopePointY(end), 0f);
+        model.configurePhysics(true, 10f, 24f);
+        for (int i = 0; i < model.ropePointCount(); i++) {
+            assertTrue(Math.hypot(model.renderRopePointX(i), model.renderRopePointY(i)) <= 10.01f);
+        }
+    }
 }

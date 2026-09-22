@@ -7,11 +7,11 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.os.SystemClock;
+import android.view.Choreographer;
 import android.view.View;
 
 /** A passive, non-interactive cursor companion rendered in its own overlay. */
 public final class CompanionView extends View {
-    private static final long FRAME_PERIOD_MS = 33L;
     private static final float MAX_SWING_RADIANS = 0.68f;
     private static final float MIN_SIZE_DP = 1f;
 
@@ -20,17 +20,17 @@ public final class CompanionView extends View {
     private final Paint spritePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF spriteBounds = new RectF();
     private final Path ropePath = new Path();
-    private final Runnable frameTick = new Runnable() {
+    private final Choreographer choreographer = Choreographer.getInstance();
+    private final Choreographer.FrameCallback frameTick = new Choreographer.FrameCallback() {
         @Override
-        public void run() {
+        public void doFrame(long frameTimeNanos) {
             if (!animating || !attached || !isRenderable()) {
                 animating = false;
                 return;
             }
-            long now = SystemClock.uptimeMillis();
-            model.advance(now);
+            model.advance(frameTimeNanos / 1_000_000L);
             invalidate();
-            postDelayed(this, FRAME_PERIOD_MS);
+            choreographer.postFrameCallback(this);
         }
     };
 
@@ -114,7 +114,7 @@ public final class CompanionView extends View {
 
     public void stopAnimation() {
         animating = false;
-        removeCallbacks(frameTick);
+        choreographer.removeFrameCallback(frameTick);
     }
 
     public String modeName() {
@@ -129,7 +129,7 @@ public final class CompanionView extends View {
     }
 
     public float angleRadians() {
-        return model.angleRadians();
+        return model.renderAngleRadians();
     }
 
     @Override
@@ -218,19 +218,20 @@ public final class CompanionView extends View {
                 ropePath.reset();
                 int pointCount = model.ropePointCount();
                 if (pointCount > 0) {
-                    ropePath.moveTo(anchorX + model.ropePointX(0) * scale,
-                            anchorY + model.ropePointY(0) * scale);
+                    ropePath.moveTo(anchorX + model.renderRopePointX(0) * scale,
+                            anchorY + model.renderRopePointY(0) * scale);
                     for (int i = 1; i < pointCount; i++) {
-                        ropePath.lineTo(anchorX + model.ropePointX(i) * scale,
-                                anchorY + model.ropePointY(i) * scale);
+                        ropePath.lineTo(anchorX + model.renderRopePointX(i) * scale,
+                                anchorY + model.renderRopePointY(i) * scale);
                     }
                     canvas.drawPath(ropePath, threadPaint);
                 }
             }
-            float pendantX = anchorX + model.pendantX() * scale;
-            float pendantY = anchorY + model.pendantY() * scale;
+            int end = model.ropePointCount() - 1;
+            float pendantX = anchorX + model.renderRopePointX(end) * scale;
+            float pendantY = anchorY + model.renderRopePointY(end) * scale;
             canvas.save();
-            canvas.rotate((float) Math.toDegrees(model.angleRadians() - bodyRestAngle),
+            canvas.rotate((float) Math.toDegrees(model.renderAngleRadians() - bodyRestAngle),
                     pendantX, pendantY);
             float left = pendantX - attachX * spriteWidth;
             float top = pendantY - attachY * spriteHeight;
@@ -386,8 +387,8 @@ public final class CompanionView extends View {
             return;
         }
         animating = true;
-        removeCallbacks(frameTick);
-        post(frameTick);
+        choreographer.removeFrameCallback(frameTick);
+        choreographer.postFrameCallback(frameTick);
     }
 
     private static float clamp(float value, float min, float max) {
