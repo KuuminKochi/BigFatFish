@@ -18,6 +18,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.lsposed.hiddenapibypass.HiddenApiBypass;
@@ -43,9 +45,9 @@ public final class CompanionService extends AccessibilityService {
     private SettingsStore.Config config;
     private String loadingPackId;
     private boolean framePending;
-    private boolean hasPosition;
-    private float pointerX;
-    private float pointerY;
+    private final PointerPosition pointer = new PointerPosition();
+    private MethodHandle cursorXGetter;
+    private MethodHandle cursorYGetter;
     private int buttonState;
     private boolean resumeFailed;
 
@@ -59,9 +61,9 @@ public final class CompanionService extends AccessibilityService {
 
     private final Choreographer.FrameCallback frame = timeNanos -> {
         framePending = false;
-        if (!running || companion == null || !hasPosition) return;
-        layout.x = Math.round(pointerX - dp(companion.anchorXDp()));
-        layout.y = Math.round(pointerY - dp(companion.anchorYDp()));
+        if (!running || companion == null || !pointer.known) return;
+        layout.x = Math.round(pointer.x - dp(companion.anchorXDp()));
+        layout.y = Math.round(pointer.y - dp(companion.anchorYDp()));
         companion.setVisibility(View.VISIBLE);
         try {
             windows.updateViewLayout(companion, layout);
@@ -137,9 +139,14 @@ public final class CompanionService extends AccessibilityService {
         try {
             if (!HiddenApiBypass.addHiddenApiExemptions(
                     "Landroid/accessibilityservice/AccessibilityService;",
-                    "Landroid/view/accessibility/AccessibilityInteractionClient;")) {
+                    "Landroid/view/accessibility/AccessibilityInteractionClient;",
+                    "Landroid/view/MotionEvent;")) {
                 throw new IllegalStateException("Accessibility connection access unavailable");
             }
+            cursorXGetter = MethodHandles.lookup().unreflect(
+                    MotionEvent.class.getMethod("getXCursorPosition"));
+            cursorYGetter = MethodHandles.lookup().unreflect(
+                    MotionEvent.class.getMethod("getYCursorPosition"));
             int connectionId = (Integer) AccessibilityService.class
                     .getMethod("getConnectionId").invoke(this);
             Class<?> client = Class.forName("android.view.accessibility.AccessibilityInteractionClient");
@@ -167,7 +174,7 @@ public final class CompanionService extends AccessibilityService {
             sources.setInt(this, InputDevice.SOURCE_MOUSE);
             observedCount = 0L;
             buttonState = 0;
-            hasPosition = false;
+            pointer.known = false;
             companion = new CompanionView(this, pack, config);
             companion.setVisibility(View.INVISIBLE);
             layout = new WindowManager.LayoutParams(dp(companion.designWidthDp()),
@@ -265,6 +272,8 @@ public final class CompanionService extends AccessibilityService {
         return a.packId.equals(b.packId) && Float.compare(a.sizeDp, b.sizeDp) == 0
                 && Float.compare(a.threadDp, b.threadDp) == 0
                 && Float.compare(a.swingStrength, b.swingStrength) == 0
+                && Float.compare(a.stringStrength, b.stringStrength) == 0
+                && Float.compare(a.stringDamping, b.stringDamping) == 0
                 && Float.compare(a.damping, b.damping) == 0
                 && Float.compare(a.animationSpeed, b.animationSpeed) == 0
                 && a.idleDelayMs == b.idleDelayMs && a.sleepEnabled == b.sleepEnabled
@@ -278,9 +287,9 @@ public final class CompanionService extends AccessibilityService {
         if (companion == null || layout == null || windows == null) return;
         layout.width = dp(companion.designWidthDp());
         layout.height = dp(companion.designHeightDp());
-        if (hasPosition) {
-            layout.x = Math.round(pointerX - dp(companion.anchorXDp()));
-            layout.y = Math.round(pointerY - dp(companion.anchorYDp()));
+        if (pointer.known) {
+            layout.x = Math.round(pointer.x - dp(companion.anchorXDp()));
+            layout.y = Math.round(pointer.y - dp(companion.anchorYDp()));
         }
         try {
             windows.updateViewLayout(companion, layout);
@@ -326,23 +335,37 @@ public final class CompanionService extends AccessibilityService {
 
     @Override public void onMotionEvent(MotionEvent event) {
         if (!running || !event.isFromSource(InputDevice.SOURCE_MOUSE)) return;
-        float x = event.getRawX();
-        float y = event.getRawY();
-        float dx = hasPosition ? x - pointerX : 0f;
-        float dy = hasPosition ? y - pointerY : 0f;
+        boolean wasKnown = pointer.known;
+        float oldX = pointer.x;
+        float oldY = pointer.y;
+        int action = event.getActionMasked();
+        boolean gesture = action == MotionEvent.ACTION_SCROLL || event.getPointerCount() > 1
+                || event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER;
+        try {
+            // Mouse-sourced touchpad events carry finger locations separately from the cursor.
+            // Convert the cursor's event-local position back to display coordinates.
+            float cursorX = (float) cursorXGetter.invokeExact(event);
+            float cursorY = (float) cursorYGetter.invokeExact(event);
+            pointer.update(cursorX + event.getRawX() - event.getX(),
+                    cursorY + event.getRawY() - event.getY(),
+                    event.getRawX(), event.getRawY(),
+                    !gesture && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE);
+        } catch (Throwable error) {
+            fail("Could not read system cursor position", error);
+            return;
+        }
+        float dx = wasKnown ? pointer.x - oldX : 0f;
+        float dy = wasKnown ? pointer.y - oldY : 0f;
         int oldButtons = buttonState;
-        pointerX = x;
-        pointerY = y;
         buttonState = event.getButtonState();
         boolean wheel = event.getAxisValue(MotionEvent.AXIS_VSCROLL) != 0f
                 || event.getAxisValue(MotionEvent.AXIS_HSCROLL) != 0f;
-        boolean activity = dx != 0f || dy != 0f || oldButtons != buttonState || wheel;
+        boolean activity = dx != 0f || dy != 0f || oldButtons != buttonState || wheel || gesture;
         if (companion != null) {
             companion.onPointer(dx / density(), dy / density(), buttonState, activity,
                     android.os.SystemClock.uptimeMillis());
         }
         observedCount++;
-        hasPosition = true;
         if (!framePending) {
             framePending = true;
             Choreographer.getInstance().postFrameCallback(frame);

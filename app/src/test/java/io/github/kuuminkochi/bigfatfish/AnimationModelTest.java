@@ -2,7 +2,6 @@ package io.github.kuuminkochi.bigfatfish;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -39,12 +38,13 @@ public final class AnimationModelTest {
     }
 
     @Test
-    public void pendulumSettlesToExactRestWithoutIdleDrive() {
+    public void classicSpringSettlesToExactRestWithoutIdleDrive() {
         AnimationModel model = new AnimationModel(0L);
         model.configure(2f, 7f, 60_000L, true, -1, 500L);
+        model.configurePhysics(false, 7f, 20f);
 
         model.onPointer(80f, 0f, 0, true, 10L);
-        assertNotEquals(0f, model.angleRadians(), 0.000001f);
+        assertTrue(Math.abs(model.angleRadians()) > 0.000001f);
         model.advance(5_000L);
         assertTrue(model.isAtRest());
         assertEquals(0f, model.angleRadians(), 0f);
@@ -80,33 +80,67 @@ public final class AnimationModelTest {
         model.advance(240_002L);
         assertEquals(AnimationModel.ACTIVE, model.mode());
     }
+
     @Test
-    public void realisticPhysicsRemainsFiniteAtExtremePointerPacketsAndZeroLength() {
+    public void realisticRopeSlackensBendsAndGravityLaterTightensIt() {
         AnimationModel model = new AnimationModel(0L);
-        model.configure(2f, 7f, 60_000L, false, -1, 500L);
-        model.configurePhysics(true, 0f);
+        model.configure(1f, 7f, 60_000L, false, -1, 500L);
+        model.configurePhysics(true, 40f, 20f);
 
-        model.onPointer(Float.MAX_VALUE, -Float.MAX_VALUE, 0, true, 1L);
-        model.advance(60_000L);
+        model.onPointer(0f, 28f, 0, true, 16L);
+        float slackDistance = (float) Math.hypot(model.pendantX(), model.pendantY());
+        assertTrue(slackDistance < 40f);
+        assertTrue(Math.abs(model.ropePointX(4)) > 0.001f);
+        float pathLength = 0f;
+        for (int i = 1; i < model.ropePointCount(); i++) {
+            pathLength += (float) Math.hypot(model.ropePointX(i) - model.ropePointX(i - 1),
+                    model.ropePointY(i) - model.ropePointY(i - 1));
+        }
+        assertTrue(pathLength > slackDistance + 1f);
 
+        model.advance(1_500L);
+        float tautDistance = (float) Math.hypot(model.pendantX(), model.pendantY());
+        assertTrue(tautDistance > slackDistance);
+        assertTrue(tautDistance <= 40.01f);
         assertTrue(Float.isFinite(model.angleRadians()));
     }
 
     @Test
-    public void realisticLengthChangesPendulumResponse() {
-        AnimationModel shortModel = new AnimationModel(0L);
-        AnimationModel longModel = new AnimationModel(0L);
-        shortModel.configure(1f, 2f, 60_000L, false, -1, 500L);
-        longModel.configure(1f, 2f, 60_000L, false, -1, 500L);
-        shortModel.configurePhysics(true, 8f);
-        longModel.configurePhysics(true, 80f);
+    public void realisticRopeReachIsBoundedAndZeroLengthStaysFinite() {
+        AnimationModel model = new AnimationModel(0L);
+        model.configure(2f, 7f, 60_000L, false, -1, 500L);
+        model.configurePhysics(true, 0f, 32f);
 
-        shortModel.onPointer(20f, 10f, 0, true, 16L);
-        longModel.onPointer(20f, 10f, 0, true, 16L);
-        shortModel.advance(300L);
-        longModel.advance(300L);
+        model.onPointer(Float.MAX_VALUE, -Float.MAX_VALUE, 0, true, 1L);
+        model.advance(60_000L);
 
-        assertNotEquals(shortModel.angleRadians(), longModel.angleRadians(), 0.0001f);
+        assertEquals(0f, model.pendantX(), 0f);
+        assertEquals(0f, model.pendantY(), 0f);
+        assertTrue(Float.isFinite(model.angleRadians()));
+        assertTrue(model.isAtRest());
+        for (int i = 0; i < model.ropePointCount(); i++) {
+            assertTrue(Float.isFinite(model.ropePointX(i)));
+            assertTrue(Float.isFinite(model.ropePointY(i)));
+        }
+    }
+
+    @Test
+    public void realisticLengthChangesKeepEveryRopeNodeWithinConfiguredReach() {
+        AnimationModel model = new AnimationModel(0L);
+        model.configure(1f, 4f, 60_000L, false, -1, 500L);
+        model.configurePhysics(true, 80f, 20f);
+        model.onPointer(120f, -75f, 0, true, 16L);
+        model.advance(1_000L);
+
+        for (int i = 0; i < model.ropePointCount(); i++) {
+            float distance = (float) Math.hypot(model.ropePointX(i), model.ropePointY(i));
+            assertTrue(distance <= 80.01f);
+        }
+        model.configurePhysics(true, 20f, 20f);
+        model.onPointer(-300f, 100f, 0, true, 1_001L);
+        for (int i = 0; i < model.ropePointCount(); i++) {
+            assertTrue(Math.hypot(model.ropePointX(i), model.ropePointY(i)) <= 20.01f);
+        }
     }
 
     @Test
@@ -149,9 +183,9 @@ public final class AnimationModelTest {
         assertTrue(model.opacity() < before);
         float beforeChange = model.opacity();
         model.configureOpacity(true, 1f, .25f);
-        assertEquals(beforeChange, model.opacity(), .0001f);
+        assertEquals(beforeChange, model.opacity(), 0.0001f);
         model.advance(1_550L);
-        assertEquals(.25f, model.opacity(), .0001f);
+        assertEquals(.25f, model.opacity(), 0f);
     }
 
     @Test

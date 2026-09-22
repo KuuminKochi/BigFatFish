@@ -20,6 +20,8 @@ public final class SettingsStore {
     public static final String KEY_FADE_IDLE = "fade_when_idle";
     public static final String KEY_ACTIVE_OPACITY = "active_opacity";
     public static final String KEY_IDLE_OPACITY = "idle_opacity";
+    public static final String KEY_STRING_STRENGTH = "string_strength";
+    public static final String KEY_STRING_DAMPING = "string_damping";
 
     private static final float DEFAULT_SIZE = 56f;
     private static final float DEFAULT_THREAD = 32f;
@@ -63,6 +65,8 @@ public final class SettingsStore {
                 .remove(KEY_FADE_IDLE)
                 .remove(KEY_ACTIVE_OPACITY)
                 .remove(KEY_IDLE_OPACITY)
+                .remove(KEY_STRING_STRENGTH)
+                .remove(KEY_STRING_DAMPING)
                 .apply();
     }
 
@@ -82,7 +86,9 @@ public final class SettingsStore {
                 getBoolean(p, KEY_REALISTIC_PHYSICS, DEFAULT_REALISTIC_PHYSICS),
                 getBoolean(p, KEY_FADE_IDLE, DEFAULT_FADE_IDLE),
                 finiteFloat(p, KEY_ACTIVE_OPACITY, DEFAULT_ACTIVE_OPACITY, 0f, 1f),
-                finiteFloat(p, KEY_IDLE_OPACITY, DEFAULT_IDLE_OPACITY, 0f, 1f));
+                finiteFloat(p, KEY_IDLE_OPACITY, DEFAULT_IDLE_OPACITY, 0f, 1f),
+                finiteFloat(p, KEY_STRING_STRENGTH, DEFAULT_STRENGTH, 0f, 2f),
+                finiteFloat(p, KEY_STRING_DAMPING, DEFAULT_DAMPING, 2f, 16f));
     }
 
     private static float finiteFloat(SharedPreferences p, String key, float fallback, float min, float max) {
@@ -149,12 +155,14 @@ public final class SettingsStore {
         public final boolean fadeWhenIdle;
         public final float activeOpacity;
         public final float idleOpacity;
+        public final float stringStrength;
+        public final float stringDamping;
 
         public Config(float sizeDp, float threadDp, float swingStrength, float damping,
                       float animationSpeed, long idleDelayMs, boolean sleepEnabled,
                       boolean showThread, int reactionMask, String packId,
                       boolean realisticPhysics, boolean fadeWhenIdle,
-                      float activeOpacity, float idleOpacity) {
+                      float activeOpacity, float idleOpacity, float stringStrength, float stringDamping) {
             this.sizeDp = clampFinite(sizeDp, DEFAULT_SIZE, 24f, 128f);
             this.threadDp = clampFinite(threadDp, DEFAULT_THREAD, 0f, 120f);
             this.swingStrength = clampFinite(swingStrength, DEFAULT_STRENGTH, 0f, 2f);
@@ -169,6 +177,8 @@ public final class SettingsStore {
             this.fadeWhenIdle = fadeWhenIdle;
             this.activeOpacity = clampFinite(activeOpacity, DEFAULT_ACTIVE_OPACITY, 0f, 1f);
             this.idleOpacity = clampFinite(idleOpacity, DEFAULT_IDLE_OPACITY, 0f, 1f);
+            this.stringStrength = clampFinite(stringStrength, DEFAULT_STRENGTH, 0f, 2f);
+            this.stringDamping = clampFinite(stringDamping, DEFAULT_DAMPING, 2f, 16f);
         }
 
         private static float clampFinite(float value, float fallback, float min, float max) {

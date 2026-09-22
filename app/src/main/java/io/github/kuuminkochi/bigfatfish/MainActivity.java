@@ -148,10 +148,12 @@ public final class MainActivity extends Activity {
         addResetAppearance();
 
         addHeading("Motion");
-        addSlider("Swing strength", "How much movement swings the character", 0f, 2f, config.swingStrength, value -> putFloat(SettingsStore.KEY_STRENGTH, value), "%.2f");
-        addSlider("Damping", "How quickly a swing settles", 2f, 16f, config.damping, value -> putFloat(SettingsStore.KEY_DAMPING, value), "%.1f");
+        addSlider("Classic swing strength", "Only used when Realistic physics is off", 0f, 2f, config.swingStrength, value -> putFloat(SettingsStore.KEY_STRENGTH, value), "%.2f");
+        addSlider("Classic damping", "Settling speed when Realistic physics is off", 2f, 16f, config.damping, value -> putFloat(SettingsStore.KEY_DAMPING, value), "%.1f");
         addSlider("Animation speed", "Playback speed of the character animation", .25f, 3f, config.animationSpeed, value -> putFloat(SettingsStore.KEY_SPEED, value), "%.2fx");
-        addSwitch("Realistic physics", "Use gravity, momentum, and pendulum length in a rigid-pendulum approximation", config.realisticPhysics, value -> putBoolean(SettingsStore.KEY_REALISTIC_PHYSICS, value));
+        addSwitch("Realistic physics", "A flexible string: slack, bending, gravity, and tension", config.realisticPhysics, value -> putBoolean(SettingsStore.KEY_REALISTIC_PHYSICS, value));
+        addSlider("String movement strength", "Independent tuning for Realistic physics", 0f, 2f, config.stringStrength, value -> putFloat(SettingsStore.KEY_STRING_STRENGTH, value), "%.2f");
+        addSlider("String damping", "How quickly realistic string motion settles", 2f, 16f, config.stringDamping, value -> putFloat(SettingsStore.KEY_STRING_DAMPING, value), "%.1f");
         addReactionChooser();
 
         addHeading("Idle");
