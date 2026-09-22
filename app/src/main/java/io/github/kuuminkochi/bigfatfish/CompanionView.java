@@ -203,6 +203,11 @@ public final class CompanionView extends View {
         float attachY = clamp(pack.attachmentY, 0f, 1f);
 
         canvas.save();
+        int opacityAlpha = Math.round(clamp(model.opacity(), 0f, 1f) * 255f);
+        int oldThreadAlpha = threadPaint.getAlpha();
+        int oldSpriteAlpha = spritePaint.getAlpha();
+        threadPaint.setAlpha(oldThreadAlpha * opacityAlpha / 255);
+        spritePaint.setAlpha(oldSpriteAlpha * opacityAlpha / 255);
         canvas.rotate((float) Math.toDegrees(model.angleRadians()), anchorX, anchorY);
         if (config.showThread) {
             canvas.drawLine(anchorX, anchorY, anchorX, anchorY + thread, threadPaint);
@@ -211,6 +216,8 @@ public final class CompanionView extends View {
         float top = anchorY + thread - attachY * spriteHeight;
         spriteBounds.set(left, top, left + spriteWidth, top + spriteHeight);
         canvas.drawBitmap(currentFrame, null, spriteBounds, spritePaint);
+        threadPaint.setAlpha(oldThreadAlpha);
+        spritePaint.setAlpha(oldSpriteAlpha);
         canvas.restore();
     }
 
@@ -228,6 +235,20 @@ public final class CompanionView extends View {
         }
         model.configure(config.swingStrength, config.damping, config.idleDelayMs,
                 config.sleepEnabled, config.reactionMask, reactionDurationMs);
+        model.configurePhysics(config.realisticPhysics, physicsLengthDp());
+        model.configureOpacity(config.fadeWhenIdle, config.activeOpacity, config.idleOpacity);
+    }
+
+    private float physicsLengthDp() {
+        float size = config == null ? 56f : Math.max(MIN_SIZE_DP, config.sizeDp);
+        float thread = config == null ? 32f : Math.max(0f, config.threadDp);
+        float spriteHeight = size;
+        if (pack != null && pack.width > 0 && pack.height > 0) {
+            spriteHeight = size * ((float) pack.height / (float) pack.width);
+        }
+        float attachY = pack == null ? 0.5f : clamp(pack.attachmentY, 0f, 1f);
+        float length = thread + Math.max(0f, (0.5f - attachY) * spriteHeight);
+        return length > 0f ? length : Math.max(MIN_SIZE_DP, spriteHeight);
     }
 
     private void recomputeGeometry() {
@@ -241,15 +262,16 @@ public final class CompanionView extends View {
         float attachX = pack == null ? 0.5f : clamp(pack.attachmentX, 0f, 1f);
         float attachY = pack == null ? 0.5f : clamp(pack.attachmentY, 0f, 1f);
         GeometryBounds bounds = new GeometryBounds();
-        includeRotatingPoint(bounds, 0f, 0f);
-        includeRotatingPoint(bounds, 0f, thread);
-        includeRotatingPoint(bounds, -attachX * spriteWidth, thread - attachY * spriteHeight);
-        includeRotatingPoint(bounds, (1f - attachX) * spriteWidth,
-                thread - attachY * spriteHeight);
-        includeRotatingPoint(bounds, -attachX * spriteWidth,
-                thread + (1f - attachY) * spriteHeight);
-        includeRotatingPoint(bounds, (1f - attachX) * spriteWidth,
-                thread + (1f - attachY) * spriteHeight);
+        boolean fullOrbit = config != null && config.realisticPhysics;
+        includePoint(bounds, 0f, 0f, fullOrbit);
+        includePoint(bounds, 0f, thread, fullOrbit);
+        includePoint(bounds, -attachX * spriteWidth, thread - attachY * spriteHeight, fullOrbit);
+        includePoint(bounds, (1f - attachX) * spriteWidth,
+                thread - attachY * spriteHeight, fullOrbit);
+        includePoint(bounds, -attachX * spriteWidth,
+                thread + (1f - attachY) * spriteHeight, fullOrbit);
+        includePoint(bounds, (1f - attachX) * spriteWidth,
+                thread + (1f - attachY) * spriteHeight, fullOrbit);
 
         float pad = 2f;
         spriteWidthDp = spriteWidth;
@@ -260,6 +282,20 @@ public final class CompanionView extends View {
         anchorXDp = pad - bounds.minX;
         anchorYDp = pad - bounds.minY;
     }
+    private static void includePoint(GeometryBounds bounds, float x, float y, boolean fullOrbit) {
+        if (fullOrbit) {
+            includeFullOrbitPoint(bounds, x, y);
+        } else {
+            includeRotatingPoint(bounds, x, y);
+        }
+    }
+
+    private static void includeFullOrbitPoint(GeometryBounds bounds, float x, float y) {
+        float radius = (float) Math.hypot(x, y);
+        bounds.include(-radius, -radius);
+        bounds.include(radius, radius);
+    }
+
 
     private static void includeRotatingPoint(GeometryBounds bounds, float x, float y) {
         includeAtAngle(bounds, x, y, -MAX_SWING_RADIANS);

@@ -151,11 +151,15 @@ public final class MainActivity extends Activity {
         addSlider("Swing strength", "How much movement swings the character", 0f, 2f, config.swingStrength, value -> putFloat(SettingsStore.KEY_STRENGTH, value), "%.2f");
         addSlider("Damping", "How quickly a swing settles", 2f, 16f, config.damping, value -> putFloat(SettingsStore.KEY_DAMPING, value), "%.1f");
         addSlider("Animation speed", "Playback speed of the character animation", .25f, 3f, config.animationSpeed, value -> putFloat(SettingsStore.KEY_SPEED, value), "%.2fx");
+        addSwitch("Realistic physics", "Use gravity, momentum, and pendulum length in a rigid-pendulum approximation", config.realisticPhysics, value -> putBoolean(SettingsStore.KEY_REALISTIC_PHYSICS, value));
         addReactionChooser();
 
         addHeading("Idle");
-        addSlider("Idle delay", "Time without mouse activity before sleeping", 1000f, 60000f, config.idleDelayMs, value -> putLong(SettingsStore.KEY_IDLE, Math.round(value)), value -> formatDuration(Math.round(value)));
-        addSwitch("Sleep when idle", "Pause the pendulum after the idle delay", config.sleepEnabled, value -> putBoolean(SettingsStore.KEY_SLEEP, value));
+        addSlider("Idle delay", "Time without mouse activity before sleeping or fading", 1000f, 60000f, config.idleDelayMs, value -> putLong(SettingsStore.KEY_IDLE, Math.round(value)), value -> formatDuration(Math.round(value)));
+        addSwitch("Sleep when idle", "Use the sleeping animation after the idle delay", config.sleepEnabled, value -> putBoolean(SettingsStore.KEY_SLEEP, value));
+        addSwitch("Fade when idle", "Fade after the idle delay without pausing motion", config.fadeWhenIdle, value -> putBoolean(SettingsStore.KEY_FADE_IDLE, value));
+        addSlider("Active opacity", "Opacity while active", 0f, 1f, config.activeOpacity, value -> putFloat(SettingsStore.KEY_ACTIVE_OPACITY, value), value -> formatPercent(value));
+        addSlider("Idle opacity", "Opacity after the idle delay", 0f, 1f, config.idleOpacity, value -> putFloat(SettingsStore.KEY_IDLE_OPACITY, value), value -> formatPercent(value));
 
         addHeading("Artwork");
         LinearLayout artActions = row();
@@ -479,6 +483,9 @@ public final class MainActivity extends Activity {
 
     private String formatDuration(long ms) {
         return ms >= 1000 && ms % 1000 == 0 ? (ms / 1000) + " s" : ms + " ms";
+    }
+    private String formatPercent(float value) {
+        return String.format(Locale.US, "%.0f%%", value * 100f);
     }
 
     private interface FloatChange { void apply(float value); }

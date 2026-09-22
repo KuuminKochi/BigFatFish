@@ -16,6 +16,10 @@ public final class SettingsStore {
     public static final String KEY_SLEEP = "sleep_enabled";
     public static final String KEY_THREAD_VISIBLE = "show_thread";
     public static final String KEY_REACTION = "reaction_mask";
+    public static final String KEY_REALISTIC_PHYSICS = "realistic_physics";
+    public static final String KEY_FADE_IDLE = "fade_when_idle";
+    public static final String KEY_ACTIVE_OPACITY = "active_opacity";
+    public static final String KEY_IDLE_OPACITY = "idle_opacity";
 
     private static final float DEFAULT_SIZE = 56f;
     private static final float DEFAULT_THREAD = 32f;
@@ -24,6 +28,10 @@ public final class SettingsStore {
     private static final float DEFAULT_SPEED = 1f;
     private static final long DEFAULT_IDLE = 5000L;
     private static final String DEFAULT_PACK = "builtin";
+    private static final boolean DEFAULT_REALISTIC_PHYSICS = false;
+    private static final boolean DEFAULT_FADE_IDLE = false;
+    private static final float DEFAULT_ACTIVE_OPACITY = 1f;
+    private static final float DEFAULT_IDLE_OPACITY = .25f;
 
     private SettingsStore() { }
 
@@ -51,6 +59,10 @@ public final class SettingsStore {
                 .remove(KEY_SLEEP)
                 .remove(KEY_THREAD_VISIBLE)
                 .remove(KEY_REACTION)
+                .remove(KEY_REALISTIC_PHYSICS)
+                .remove(KEY_FADE_IDLE)
+                .remove(KEY_ACTIVE_OPACITY)
+                .remove(KEY_IDLE_OPACITY)
                 .apply();
     }
 
@@ -66,7 +78,11 @@ public final class SettingsStore {
                 getBoolean(p, KEY_SLEEP, true),
                 getBoolean(p, KEY_THREAD_VISIBLE, true),
                 boundedReaction(p),
-                packId(p));
+                packId(p),
+                getBoolean(p, KEY_REALISTIC_PHYSICS, DEFAULT_REALISTIC_PHYSICS),
+                getBoolean(p, KEY_FADE_IDLE, DEFAULT_FADE_IDLE),
+                finiteFloat(p, KEY_ACTIVE_OPACITY, DEFAULT_ACTIVE_OPACITY, 0f, 1f),
+                finiteFloat(p, KEY_IDLE_OPACITY, DEFAULT_IDLE_OPACITY, 0f, 1f));
     }
 
     private static float finiteFloat(SharedPreferences p, String key, float fallback, float min, float max) {
@@ -129,10 +145,16 @@ public final class SettingsStore {
         public final boolean showThread;
         public final int reactionMask;
         public final String packId;
+        public final boolean realisticPhysics;
+        public final boolean fadeWhenIdle;
+        public final float activeOpacity;
+        public final float idleOpacity;
 
         public Config(float sizeDp, float threadDp, float swingStrength, float damping,
                       float animationSpeed, long idleDelayMs, boolean sleepEnabled,
-                      boolean showThread, int reactionMask, String packId) {
+                      boolean showThread, int reactionMask, String packId,
+                      boolean realisticPhysics, boolean fadeWhenIdle,
+                      float activeOpacity, float idleOpacity) {
             this.sizeDp = clampFinite(sizeDp, DEFAULT_SIZE, 24f, 128f);
             this.threadDp = clampFinite(threadDp, DEFAULT_THREAD, 0f, 120f);
             this.swingStrength = clampFinite(swingStrength, DEFAULT_STRENGTH, 0f, 2f);
@@ -143,6 +165,10 @@ public final class SettingsStore {
             this.showThread = showThread;
             this.reactionMask = reactionMask == -1 || reactionMask == 4 || reactionMask == 0 ? reactionMask : -1;
             this.packId = packId == null || packId.isEmpty() ? DEFAULT_PACK : packId;
+            this.realisticPhysics = realisticPhysics;
+            this.fadeWhenIdle = fadeWhenIdle;
+            this.activeOpacity = clampFinite(activeOpacity, DEFAULT_ACTIVE_OPACITY, 0f, 1f);
+            this.idleOpacity = clampFinite(idleOpacity, DEFAULT_IDLE_OPACITY, 0f, 1f);
         }
 
         private static float clampFinite(float value, float fallback, float min, float max) {

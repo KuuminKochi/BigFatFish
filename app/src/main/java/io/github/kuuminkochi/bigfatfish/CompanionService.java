@@ -268,7 +268,10 @@ public final class CompanionService extends AccessibilityService {
                 && Float.compare(a.damping, b.damping) == 0
                 && Float.compare(a.animationSpeed, b.animationSpeed) == 0
                 && a.idleDelayMs == b.idleDelayMs && a.sleepEnabled == b.sleepEnabled
-                && a.showThread == b.showThread && a.reactionMask == b.reactionMask;
+                && a.showThread == b.showThread && a.reactionMask == b.reactionMask
+                && a.realisticPhysics == b.realisticPhysics && a.fadeWhenIdle == b.fadeWhenIdle
+                && Float.compare(a.activeOpacity, b.activeOpacity) == 0
+                && Float.compare(a.idleOpacity, b.idleOpacity) == 0;
     }
 
     private void resizeOverlay() {
